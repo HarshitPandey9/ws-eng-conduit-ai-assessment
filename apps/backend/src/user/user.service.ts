@@ -27,7 +27,6 @@ export class UserService {
   }
 
   async create(dto: CreateUserDto): Promise<IUserRO> {
-    // check uniqueness of username/email
     const { username, email, password } = dto;
     const exists = await this.userRepository.count({ $or: [{ username }, { email }] });
 
@@ -41,7 +40,6 @@ export class UserService {
       );
     }
 
-    // create new user
     const user = new User(username, email, password);
     const errors = await validate(user);
 
@@ -49,7 +47,7 @@ export class UserService {
       throw new HttpException(
         {
           message: 'Input data validation failed',
-          errors: { username: 'Userinput is not valid.' },
+          errors: { username: 'User input is not valid.' },
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -73,12 +71,9 @@ export class UserService {
 
   async findById(id: number): Promise<IUserRO> {
     const user = await this.userRepository.findOne(id);
-
     if (!user) {
-      const errors = { User: ' not found' };
-      throw new HttpException({ errors }, 401);
+      throw new HttpException({ errors: { User: ' not found' } }, 401);
     }
-
     return this.buildUserRO(user);
   }
 
@@ -104,14 +99,21 @@ export class UserService {
   }
 
   private buildUserRO(user: User) {
-    const userRO = {
-      bio: user.bio,
-      email: user.email,
-      image: user.image,
-      token: this.generateJWT(user),
-      username: user.username,
+    return {
+      user: {
+        bio: user.bio,
+        email: user.email,
+        image: user.image,
+        token: this.generateJWT(user),
+        username: user.username,
+      },
     };
+  }
 
-    return { user: userRO };
+  // New method for Conduit Roster
+  async getConduitRoster() {
+    return this.userRepository.getConduitRoster();
   }
 }
+
+

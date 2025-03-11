@@ -1,1 +1,18 @@
-<p>TODO</p>
+<div class="roster-container" *ngIf="rosterUsers.length > 0; else noUsers">
+    <h2>📜 Author Roster</h2>
+    <ul>
+      <li *ngFor="let user of rosterUsers">
+        <a [href]="user.profileLink" target="_blank" rel="noopener noreferrer" aria-label="View profile of {{ user.username }}">
+          {{ user.username }}
+        </a>
+        <span class="info">📝 Articles: <strong>{{ user.articleCount }}</strong></span>
+        <span class="info">⭐ Favorites: <strong>{{ user.totalFavorites }}</strong></span>
+        <span class="info">📅 First Article: <strong>{{ user.firstArticleDate | date: 'mediumDate' }}</strong></span>
+      </li>
+    </ul>
+  </div>
+  
+  <ng-template #noUsers>
+    <p class="no-users"> No authors found.</p>
+  </ng-template>
+  

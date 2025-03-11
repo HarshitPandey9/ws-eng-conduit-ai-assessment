@@ -4,7 +4,6 @@ import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { User } from './user.decorator';
 import { IUserRO } from './user.interface';
 import { UserService } from './user.service';
-
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiBearerAuth()
@@ -48,4 +47,12 @@ export class UserController {
     const user = { email, token, username, bio, image };
     return { user };
   }
+
+  // New Endpoint for Conduit Roster
+  @Get('users/roster')
+  async getConduitRoster() {
+    return this.userService.getConduitRoster();
+  }
 }
+
+
