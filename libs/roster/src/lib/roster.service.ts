@@ -8,11 +8,11 @@ import { RosterUser } from '@realworld/core/api-types/roster-user';
   providedIn: 'root',
 })
 export class RosterService {
-  private apiUrl = `${environment.api_url}/roster`;
+  private api_Url = `${environment.api_url}/roster`;
 
   constructor(private http: HttpClient) {}
 
   getRoster(): Observable<RosterUser[]> {
-    return this.http.get<RosterUser[]>(this.apiUrl);
+    return this.http.get<RosterUser[]>(this.api_Url);
   }
 }

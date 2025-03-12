@@ -8,6 +8,7 @@ import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { User } from './user.entity';
 import { IUserRO } from './user.interface';
 import { UserRepository } from './user.repository';
+import { ConduitRosterEntry } from './user.types'; 
 
 @Injectable()
 export class UserService {
@@ -17,13 +18,13 @@ export class UserService {
     return this.userRepository.findAll();
   }
 
-  async findOne(loginUserDto: LoginUserDto): Promise<User> {
+  async findOne(loginUserDto: LoginUserDto): Promise<User | null> {
     const findOneOptions = {
       email: loginUserDto.email,
       password: crypto.createHmac('sha256', loginUserDto.password).digest('hex'),
     };
 
-    return (await this.userRepository.findOne(findOneOptions))!;
+    return this.userRepository.findOne(findOneOptions) ?? null;
   }
 
   async create(dto: CreateUserDto): Promise<IUserRO> {
@@ -51,38 +52,50 @@ export class UserService {
         },
         HttpStatus.BAD_REQUEST,
       );
-    } else {
-      await this.em.persistAndFlush(user);
-      return this.buildUserRO(user);
     }
+
+    await this.em.persistAndFlush(user);
+    return this.buildUserRO(user);
   }
 
-  async update(id: number, dto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto): Promise<IUserRO> {
     const user = await this.userRepository.findOne(id);
+
+    if (!user) {
+      throw new HttpException({ message: 'User not found' }, HttpStatus.NOT_FOUND);
+    }
+
     wrap(user).assign(dto);
     await this.em.flush();
 
-    return this.buildUserRO(user!);
+    return this.buildUserRO(user);
   }
 
-  async delete(email: string) {
+  async delete(email: string): Promise<number> {
     return this.userRepository.nativeDelete({ email });
   }
 
   async findById(id: number): Promise<IUserRO> {
     const user = await this.userRepository.findOne(id);
+
     if (!user) {
-      throw new HttpException({ errors: { User: ' not found' } }, 401);
+      throw new HttpException({ message: 'User not found' }, HttpStatus.NOT_FOUND);
     }
+
     return this.buildUserRO(user);
   }
 
   async findByEmail(email: string): Promise<IUserRO> {
-    const user = await this.userRepository.findOneOrFail({ email });
+    const user = await this.userRepository.findOne({ email });
+
+    if (!user) {
+      throw new HttpException({ message: 'User not found' }, HttpStatus.NOT_FOUND);
+    }
+
     return this.buildUserRO(user);
   }
 
-  generateJWT(user: User) {
+  generateJWT(user: User): string {
     const today = new Date();
     const exp = new Date(today);
     exp.setDate(today.getDate() + 60);
@@ -90,7 +103,7 @@ export class UserService {
     return jwt.sign(
       {
         email: user.email,
-        exp: exp.getTime() / 1000,
+        exp: Math.floor(exp.getTime() / 1000),
         id: user.id,
         username: user.username,
       },
@@ -98,7 +111,7 @@ export class UserService {
     );
   }
 
-  private buildUserRO(user: User) {
+  private buildUserRO(user: User): IUserRO {
     return {
       user: {
         bio: user.bio,
@@ -109,11 +122,10 @@ export class UserService {
       },
     };
   }
-
-  // New method for Conduit Roster
-  async getConduitRoster() {
+  async getConduitRoster(): Promise<ConduitRosterEntry[]> {
     return this.userRepository.getConduitRoster();
   }
 }
+
 
 
